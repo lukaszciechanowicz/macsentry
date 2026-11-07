@@ -1,5 +1,9 @@
 # MacSentry
 
+![MacSentry scan report inventory overview and Homebrew advisories](assets/scan-overview.png)
+
+![MacSentry browser extension advisory search results](assets/extension-advisories.png)
+
 This is my personal tool. I started it to scan Mac apps for known
 vulnerabilities, then added telemetry controls and Chrome and Firefox
 extension scanning to help review more of my Mac's privacy and security.
