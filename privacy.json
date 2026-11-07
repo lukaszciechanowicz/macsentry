@@ -1,0 +1,6 @@
+{
+  "homebrew_analytics": false,
+  "vscode_telemetry": false,
+  "firefox_telemetry": false,
+  "chrome_telemetry": false
+}
