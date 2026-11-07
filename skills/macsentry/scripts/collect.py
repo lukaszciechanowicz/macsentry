@@ -10,6 +10,8 @@ import shutil
 import subprocess
 import sys
 
+import browser_extensions
+
 
 def command(args, decoder=json.loads, timeout=120):
     try:
@@ -83,6 +85,7 @@ def main():
         "macos": command(["/usr/bin/sw_vers"], bytes.decode),
         "applications": applications(),
         "package_receipts": receipts(),
+        "browser_extensions": browser_extensions.collect(),
     }
     brew = shutil.which("brew")
     if brew:

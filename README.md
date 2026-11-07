@@ -1,7 +1,8 @@
 # MacSentry
 
-An AI-agent skill for checking known vulnerabilities in Mac apps and Homebrew
-packages, with an optional script for configuring selected telemetry settings.
+This is my personal tool. I started it to scan Mac apps for known
+vulnerabilities, then added telemetry controls and Chrome and Firefox
+extension scanning to help review more of my Mac's privacy and security.
 
 ## Install (Codex)
 
@@ -16,11 +17,44 @@ For omp: `bash install.sh omp`, then `/skill:macsentry`.
 
 Requires macOS, Python 3, and an agent with web access. Homebrew scanning requires `brew vulns`.
 
-The vulnerability scan is read-only. It inventories App Store/direct apps and
-package receipts; the agent checks advisories. Reports uncertainty, not a
-guarantee of safety. Product/version lookups contact public services.
+The vulnerability scan is read-only. It inventories App Store/direct apps,
+package receipts, and Chrome and Firefox extensions; the agent checks advisories.
+Reports uncertainty, not a guarantee of safety. Product/version lookups contact
+public services.
 
 Installation links this checkout into `~/.agents/skills` (Codex) or `~/.omp/agent/skills` (omp); keep it in place.
+
+## Save a scan report
+
+```sh
+python3 scripts/scan.py
+# Optional: choose another local directory
+python3 scripts/scan.py --output-dir /path/to/reports
+```
+
+The command displays the collector's JSON output and saves it as
+`~/Library/Logs/MacSentry/scan-<UTC-date-and-time>.json` by default. The file
+is created with owner-only permissions and contains sensitive local inventory,
+paths and extension permissions; keep it private and do not commit it. The JSON
+contains Homebrew vulnerability results and collection errors, but is not a
+finished vulnerability assessment: the agent skill must check application and
+extension advisories. Successful collection does not mean all checks succeeded.
+
+## Browser extension scanning
+
+The skill inventories Chrome's standard `Default` and `Profile *` directories
+and Firefox profiles registered in `profiles.ini`. For each extension, it
+collects available IDs, versions, state, paths and permission metadata; the
+agent checks vendor and vulnerability advisories and highlights sensitive
+access for review. It does not execute extensions or automatically remove them.
+
+The inventory can include built-in browser components, disabled extensions,
+stale entries and duplicate records. Custom Chrome data directories, other
+browser channels, unregistered profiles, Safari extensions and extensions
+missing from browser metadata are not comprehensively covered. A permission,
+signature or store listing is not proof of safety or compromise. Extension
+names and versions may be sent to advisory providers; local profile paths,
+permission URLs and the complete inventory must stay local.
 
 ## Privacy controls
 
