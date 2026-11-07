@@ -28,7 +28,7 @@ def chrome_name(manifest, extension_path):
     return name
 
 
-def chrome(root):
+def chrome(root, progress=lambda *_: None):
     result = {"profiles": [], "errors": []}
     if not root.exists():
         result["status"] = "not found"
@@ -40,6 +40,7 @@ def chrome(root):
         result["errors"].append(str(error))
         return result
     for profile in profiles:
+        progress("Chrome profile", profile.name)
         record = {"profile": str(profile), "extensions": [], "errors": []}
         result["profiles"].append(record)
         found = False
@@ -86,12 +87,14 @@ def chrome(root):
                 "host_permissions": manifest.get("host_permissions"),
                 "active_permissions": entry.get("active_permissions"),
             })
+            item = record["extensions"][-1]
+            progress("Chrome extension", f'{item["name"] or identifier} ({item["version"] or "version unknown"})')
     if not profiles:
         result["errors"].append("No standard Chrome profiles found")
     return result
 
 
-def firefox(root):
+def firefox(root, progress=lambda *_: None):
     result = {"profiles": [], "errors": []}
     registry = root / "profiles.ini"
     if not registry.exists():
@@ -116,6 +119,7 @@ def firefox(root):
     if not profiles:
         result["errors"].append("No Firefox profiles registered")
     for profile in sorted(set(profiles)):
+        progress("Firefox profile", profile.name)
         record = {"profile": str(profile), "extensions": [], "errors": []}
         result["profiles"].append(record)
         path = profile / "extensions.json"
@@ -143,12 +147,14 @@ def firefox(root):
                     "permissions": addon.get("userPermissions"),
                     "requested_permissions": addon.get("requestedPermissions"),
                 })
+                item = record["extensions"][-1]
+                progress("Firefox extension", f'{item["name"] or item["id"] or "unknown"} ({item["version"] or "version unknown"})')
         except (OSError, ValueError, AttributeError, TypeError) as error:
             record["errors"].append(f"{path}: {error}")
     return result
 
 
-def collect():
+def collect(progress=lambda *_: None):
     support = Path.home() / "Library/Application Support"
-    return {"chrome": chrome(support / "Google/Chrome"),
-            "firefox": firefox(support / "Firefox")}
+    return {"chrome": chrome(support / "Google/Chrome", progress),
+            "firefox": firefox(support / "Firefox", progress)}

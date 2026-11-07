@@ -28,11 +28,16 @@ Installation links this checkout into `~/.agents/skills` (Codex) or `~/.omp/agen
 
 ```sh
 python3 scripts/scan.py
+# Machine-readable JSON on stdout instead of live progress
+python3 scripts/scan.py --no-interactive
 # Optional: choose another local directory
 python3 scripts/scan.py --output-dir /path/to/reports
 ```
 
-The command displays the collector's JSON output and saves it as
+The command displays live item-by-item progress and a summary by default. Some
+system and Homebrew commands may take time before their individual results are
+available. `--no-interactive` emits the complete JSON on stdout and the report
+path on stderr. Both modes save
 `~/Library/Logs/MacSentry/scan-<UTC-date-and-time>.json` by default. The file
 is created with owner-only permissions and contains sensitive local inventory,
 paths and extension permissions; keep it private and do not commit it. The JSON
