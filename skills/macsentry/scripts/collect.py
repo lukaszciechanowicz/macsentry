@@ -12,6 +12,7 @@ import subprocess
 import sys
 
 import browser_extensions
+import extension_advisories
 
 PROGRESS = False
 
@@ -106,6 +107,8 @@ def main():
     }
     progress("Stage", "Reading Chrome and Firefox extension profiles...")
     report["browser_extensions"] = browser_extensions.collect(progress)
+    progress("Stage", "Searching NVD for extension advisories (names or Chrome IDs are sent to NVD)...")
+    report["extension_advisories"] = extension_advisories.assess(report["browser_extensions"], progress)
     brew = shutil.which("brew")
     if brew:
         progress("Stage", "Reading Homebrew inventory...")

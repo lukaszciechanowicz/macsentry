@@ -9,15 +9,16 @@ Read-only vulnerability assessment. Never install, upgrade, remove software, or 
 
 ## Collect
 
-Run `python3 scripts/collect.py` relative to this skill's directory. Requires macOS and Python 3. Homebrew is optional. The script prints JSON; keep the inventory local and never commit it. Advisory queries disclose product names/versions to their providers; do not send usernames, paths, or the full inventory.
+Run `python3 scripts/collect.py` relative to this skill's directory. Requires macOS, Python 3, and network access for extension advisory searches. Homebrew is optional. The script prints JSON; keep the inventory local and never commit it. The collector sends extension names or Chrome store IDs to NVD for keyword searches. Other advisory queries disclose product names/versions to their providers; do not send usernames, paths, or the full inventory.
 
-Inspect every command's status and stderr. Missing tools, timeouts, invalid output, and unreadable bundles are coverage gaps, not clean scans. The collector is an inventory tool, not an application vulnerability matcher.
+Inspect every command's status and stderr. Missing tools, timeouts, invalid output, and unreadable bundles are coverage gaps, not clean scans. NVD keyword matches are candidates, not verified identities or affected-version determinations.
 
 - `applications`: System Information discovery enriched with actual bundle ID, version, and build. Includes App Store and directly installed apps regardless of installer. Keep separate copies/versions; distinguish active installations from caches, mounted installers, and backups using their paths. Discovery can miss apps: explicitly report this limit.
 - `package_receipts`: installation history, not proof that files still exist or that the recorded version is current. For third-party non-app packages, use `pkgutil --files <package-id>` and receipt volume/location to locate the payload, then inspect current file metadata. Do not execute payloads. If current identity/version cannot be established, report not assessed. Do not flag removed software from a receipt alone.
 - `homebrew_inventory`: formulae and casks. Prefer actual app bundle versions over stale cask records.
 - `homebrew_vulnerabilities`: unfiltered `brew vulns --json`. Preserve patched/resolved findings separately from open findings. Read `complete`, `skipped_formulae`, `outdated_without_sbom`, and `unscanned_formulae`. Nonzero exit status can mean findings OR failure; zero does not establish full coverage. Unsupported commands mean not assessed; do not silently install a newer Homebrew.
 - `browser_extensions`: Chrome standard `Default`/`Profile *` profiles and Firefox profiles registered in `profiles.ini`. Read per-profile errors and retain browser, profile, extension ID, version, path, state and permissions separately. Metadata can be stale; Chrome component entries may refer to old browser paths or lack identity, and Firefox may list multiple records for a built-in add-on. Do not infer current enablement when state is absent. Other browser channels, custom Chrome user-data directories, unregistered profiles, Safari extensions, extensions not in the profile databases, and browser-managed plugin components are not comprehensively covered. File metadata is untrusted and never executed.
+- `extension_advisories`: NVD keyword searches for extension profile records, deduplicated by query. Check each status, missing version, lookup error and truncated response. Keyword matches require vendor, version and platform verification; no keyword matches is not a finding of safety. Browser-managed components and unresolved identities remain not assessed. Up to 100 results per query are retained.
 
 ## Assess
 

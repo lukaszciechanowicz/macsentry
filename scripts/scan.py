@@ -9,6 +9,8 @@ import subprocess
 import sys
 import unicodedata
 
+import html_report
+
 
 def safe(value):
     """Do not let untrusted inventory names inject terminal controls."""
@@ -29,7 +31,7 @@ def show_progress(line):
         print(f"  {section}: {message}", flush=True)
 
 
-def show_summary(data, report):
+def show_summary(data, report, html_path):
     print("\nCollection complete")
     for key, label in (("macos", "macOS"), ("applications", "Applications"),
                        ("package_receipts", "Package receipts"),
@@ -70,8 +72,12 @@ def show_summary(data, report):
             print(f"    Skipped formulae: {', '.join(safe(x) for x in skipped)}")
     else:
         print("  Homebrew advisory coverage: not assessed")
-    print(f"  Report: {safe(report)}")
-    print("  Inventory only: application and extension advisories require the agent skill.")
+    checks = data.get("extension_advisories", {}).get("results", [])
+    print(f"  Extension advisory searches: {sum('total_results' in x for x in checks)} records searched; "
+          f"{sum(x.get('status') == 'not assessed' for x in checks)} not assessed")
+    print(f"  JSON report: {safe(report)}")
+    print(f"  HTML report: {safe(html_path)}")
+    print("  Extension keyword hits need identity and version verification; application advisories require the agent skill.")
 
 
 def main():
@@ -86,6 +92,8 @@ def main():
     args = parser.parse_args()
     collector = Path(__file__).resolve().parent.parent / "skills/macsentry/scripts/collect.py"
     report = None
+    html_path = None
+    html_created = False
     created = False
     complete = False
     try:
@@ -112,14 +120,19 @@ def main():
             return status
         with report.open(encoding="utf-8") as stream:
             data = json.load(stream)
+        html_path = report.with_suffix(".html")
+        html_fd = os.open(html_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        html_created = True
+        with os.fdopen(html_fd, "w", encoding="utf-8") as stream:
+            stream.write(html_report.render(data))
         complete = True
         if args.no_interactive:
-            print(f"Scan report: {report}", file=sys.stderr)
+            print(f"JSON report: {report}\nHTML report: {html_path}", file=sys.stderr)
             with report.open("rb") as stream:
                 while chunk := stream.read(65536):
                     sys.stdout.buffer.write(chunk)
         else:
-            show_summary(data, report)
+            show_summary(data, report, html_path)
         return 0
     except (OSError, ValueError) as error:
         print(f"scan: {error}", file=sys.stderr)
@@ -127,6 +140,8 @@ def main():
     finally:
         if created and not complete:
             report.unlink(missing_ok=True)
+        if html_created and not complete:
+            html_path.unlink(missing_ok=True)
 
 
 if __name__ == "__main__":

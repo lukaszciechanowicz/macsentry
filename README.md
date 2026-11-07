@@ -17,10 +17,9 @@ For omp: `bash install.sh omp`, then `/skill:macsentry`.
 
 Requires macOS, Python 3, and an agent with web access. Homebrew scanning requires `brew vulns`.
 
-The vulnerability scan is read-only. It inventories App Store/direct apps,
-package receipts, and Chrome and Firefox extensions; the agent checks advisories.
-Reports uncertainty, not a guarantee of safety. Product/version lookups contact
-public services.
+The scanner reads local inventory without changing installed software, then
+queries NVD for extension advisory candidates. The agent checks additional
+advisories. Results report uncertainty, not a guarantee of safety.
 
 Installation links this checkout into `~/.agents/skills` (Codex) or `~/.omp/agent/skills` (omp); keep it in place.
 
@@ -34,32 +33,42 @@ python3 scripts/scan.py --no-interactive
 python3 scripts/scan.py --output-dir /path/to/reports
 ```
 
-The command displays live item-by-item progress and a summary by default. Some
-system and Homebrew commands may take time before their individual results are
-available. `--no-interactive` emits the complete JSON on stdout and the report
-path on stderr. Both modes save
-`~/Library/Logs/MacSentry/scan-<UTC-date-and-time>.json` by default. The file
-is created with owner-only permissions and contains sensitive local inventory,
-paths and extension permissions; keep it private and do not commit it. The JSON
-contains Homebrew vulnerability results and collection errors, but is not a
-finished vulnerability assessment: the agent skill must check application and
-extension advisories. Successful collection does not mean all checks succeeded.
+The command displays live item-by-item progress and a summary by default.
+System, Homebrew, and rate-limited NVD queries may take time.
+`--no-interactive` emits JSON on stdout and report paths on stderr. Both modes
+save matching dated `.json` and `.html` files in `~/Library/Logs/MacSentry/` by
+default. Open the HTML file in a browser to see inventory statistics, Homebrew
+findings, extension advisory candidates, and coverage gaps; the JSON retains
+the underlying data. Both files have owner-only permissions and contain
+sensitive local inventory; keep them private and do not commit them.
+
+The report is not a complete vulnerability assessment: the agent skill must
+verify candidate identities and versions and check application advisories.
+Successful collection does not mean all checks succeeded.
 
 ## Browser extension scanning
 
-The skill inventories Chrome's standard `Default` and `Profile *` directories
-and Firefox profiles registered in `profiles.ini`. For each extension, it
-collects available IDs, versions, state, paths and permission metadata; the
-agent checks vendor and vulnerability advisories and highlights sensitive
-access for review. It does not execute extensions or automatically remove them.
+The scanner inventories Chrome's standard `Default` and `Profile *` directories
+and Firefox profiles registered in `profiles.ini`. It records available IDs,
+versions, state, paths and permissions, and automatically searches NVD by
+extension name or Chrome store ID. Queries are deduplicated and rate-limited;
+up to 100 results are retained per search. NVD receives the queried names or
+IDs, but not profiles, paths, permission URLs or the full inventory.
+
+Keyword hits are **unverified candidates**, not proof that the installed
+version is vulnerable. No keyword match is not proof of safety. Browser-managed
+components, missing identities and failed lookups are reported as not assessed.
+For simple numeric versions, the report compares NVD CPE ranges whose product
+name matches the query; this is not a verified product mapping or complete
+applicability check. The agent can verify candidates against vendors and other
+sources. The scanner does not execute extensions or automatically remove them.
 
 The inventory can include built-in browser components, disabled extensions,
 stale entries and duplicate records. Custom Chrome data directories, other
 browser channels, unregistered profiles, Safari extensions and extensions
 missing from browser metadata are not comprehensively covered. A permission,
-signature or store listing is not proof of safety or compromise. Extension
-names and versions may be sent to advisory providers; local profile paths,
-permission URLs and the complete inventory must stay local.
+signature or store listing is not proof of safety or compromise. Additional
+agent advisory lookups may disclose product names and versions to providers.
 
 ## Privacy controls
 
